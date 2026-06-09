@@ -5,7 +5,7 @@
 > automated tests in `Tests/WireTapTests/`.
 >
 > **Maintained by**: Poshan Karki
-> **Last updated**: 2026-06-04
+> **Last updated**: 2026-06-09
 
 ---
 
@@ -54,7 +54,7 @@ Then the niche-lock-in wave (TRACER-005…008) and DX wins (TRACER-009…012).
 | TRACER-001 | Session Persistence | Foundation | P0 | Implemented | [spec](TRACER-001-session-persistence.md) |
 | TRACER-002 | Unified Session Export / Import | Foundation | P0 | Implemented | [spec](TRACER-002-session-export.md) |
 | TRACER-003 | LLM-Optimized Export | AI layer | P0 | Implemented | [spec](TRACER-003-llm-export.md) |
-| TRACER-004 | `wiretap-mcp` MCP Server | AI layer | P1 | Implemented (file mode) | [spec](TRACER-004-mcp-server.md) |
+| TRACER-004 | `wiretap-mcp` MCP Server | AI layer | P1 | Implemented | [spec](TRACER-004-mcp-server.md) |
 | TRACER-005 | Pluggable Protocol Decoders | Niche | P1 | Implemented | [spec](TRACER-005-decoders.md) |
 | TRACER-006 | Connection Lifecycle Timeline | Niche | P1 | Implemented | [spec](TRACER-006-lifecycle.md) |
 | TRACER-007 | Cross-Radio Correlation | Niche | P2 | Implemented | [spec](TRACER-007-correlation.md) |

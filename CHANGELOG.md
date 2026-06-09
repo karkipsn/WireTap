@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Live MCP bridge** (`WireTap.startLocalBridge(port:)` / `stopLocalBridge()`) — a
+  read-only HTTP/1.1 server bound to 127.0.0.1, serving the current capture so
+  `wiretap-mcp` can query traffic as it happens without a file export step (TRACER-004
+  AC-7/AC-8). `#if DEBUG` only.
+- `wiretap-mcp` promoted to a **git submodule** (`wiretap-mcp/`) — `git clone
+  --recurse-submodules` now fetches both the Swift package and the MCP server.
+- **`wiretap-mcp` live mode** — `--live [port]`, `WIRETAP_BRIDGE_URL`, and
+  `WIRETAP_BRIDGE_PORT` connect the MCP server to the running app's bridge.
+- **MCP resources** — `wiretap://session/current` and `wiretap://session/{path}` let
+  agents read session JSON directly as a resource without calling a tool.
+- **Canned prompts** — `diagnose-disconnect` and `explain-network-failures` pre-fill
+  the relevant capture context and a triage instruction for the agent.
+- `LocalBridgeSpec` — 6 new Swift tests covering AC-7 (read-only) and AC-8
+  (localhost-only), plus endpoint smoke tests.
+- 3 additional Node tests covering `get_overview`, `get_nfc_records`, and `search`
+  (previously untested tools).
+
 ## [1.0.0] - 2026-06-05
 
 Initial public release.

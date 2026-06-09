@@ -3,9 +3,9 @@
 **Spec ID**: TRACER-004
 **Component**: `wiretap-mcp` (new companion executable) + optional in-app local bridge
 **Author**: Poshan Karki
-**Status**: Implemented (file mode) — live bridge pending
+**Status**: Implemented
 **Created**: 2026-06-04
-**Last updated**: 2026-06-04
+**Last updated**: 2026-06-09
 **Depends on**: TRACER-002 (`.wiretapsession` schema), TRACER-003 (`LLMRenderer`)
 **Unlocks**: the product's headline differentiator
 
@@ -215,11 +215,17 @@ extension WireTap {
 - [x] AC-5 no-session graceful
 - [x] AC-6 responses bounded
 - [x] AC-7 read-only guarantee — by name + every tool annotated `readOnlyHint: true`
-- [ ] AC-8 localhost & DEBUG-gated bridge — **deferred** (live mode not built)
+- [x] AC-8 localhost & DEBUG-gated bridge — `LocalBridgeSpec.test_AC8_localhostOnly` (Swift)
 - [x] AC-9 MCP handshake — verified manually over stdio (initialize + tools/list + tools/call)
 
 **Implemented in**: `LocalPackages/wiretap-mcp/` — `src/llm.ts` (port of the Swift TRACER-003
 renderer), `src/tools.ts` (the 7 read-only tools), `src/index.ts` (thin MCP registration via
 `registerTool`). Tests: `test/server.test.ts` (`npm test`), with golden fixtures emitted by
-Swift in `test/fixtures/`. **Not built:** the live localhost bridge (AC-8), MCP resources, and
-canned prompts — all remain in the roadmap.
+Swift in `test/fixtures/`. **Live bridge:** `Sources/WireTap/Core/LocalBridge.swift`
+(`LocalBridge`, `WireTap.startLocalBridge/stopLocalBridge`, `#if DEBUG`); tests in
+`Tests/WireTapTests/LocalBridgeSpec.swift` (AC-7 + AC-8 + 4 endpoint smoke tests).
+**Node live mode:** `src/bridge.ts` (`fetchLiveSession`, `isBridgeAlive`),
+`src/session.ts` (`configureLiveBridge`), `--live` / `WIRETAP_BRIDGE_URL` / `WIRETAP_BRIDGE_PORT`
+flags in `src/index.ts`. **MCP resources:** `wiretap://session/current` +
+`wiretap://session/{path}` registered in `src/index.ts`. **Canned prompts:**
+`diagnose-disconnect` + `explain-network-failures` in `src/index.ts`.

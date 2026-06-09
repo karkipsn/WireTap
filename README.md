@@ -85,11 +85,11 @@ Transparent view of what's here today, so you can plan around it.
 | **Session persistence** (survives relaunch) | ✅ New | opt-in `WireTap.configure(storage: .disk())` (TRACER-001) |
 | **Session export / import** (`.wiretapsession`) | ✅ New | "Export Session…" — share sheet on iOS (TRACER-002) |
 | **LLM export** ("Copy for AI") | ✅ New | compact, redacted, token-bounded (TRACER-003) |
-| **AI-agent access over MCP** | 🟡 Companion | `wiretap-mcp` Node server reads exported sessions (file mode) |
+| **AI-agent access over MCP** | ✅ New | `wiretap-mcp` companion server — file mode + live localhost bridge (`WireTap.startLocalBridge()`). Ships as a git submodule; see [`wiretap-mcp/`](wiretap-mcp/). |
 | **Pluggable BLE decoders** (raw bytes → named fields) | ✅ New | `WireTap.ble.registerDecoder(forCharacteristic:)` (TRACER-005) |
 | **Configurable redaction** (headers + JSON body keys) | ✅ New | `WireTap.redaction` (TRACER-010); defaults cover auth/token/secret |
-| Live MCP bridge (query while running) | ◻️ Planned | TRACER-004 phase 2 |
-| Connection lifecycle view, cross-radio correlation | ◻️ Planned | TRACER-006…007 |
+| **Connection lifecycle** + **cross-radio correlation** | ✅ New | per-attempt BLE lifecycle view; NFC→BLE→network episode clustering (TRACER-006, TRACER-007) |
+| **Session diff** | ✅ New | compare a working vs failing capture to find what changed (TRACER-008) |
 
 Redaction is a hard invariant: secrets are scrubbed before anything is persisted, exported,
 or handed to an agent — sensitive **headers and JSON body keys** (configurable via
@@ -102,6 +102,14 @@ See [`doc/specs/`](doc/specs/) for the roadmap and per-feature acceptance criter
 ---
 
 ## Installation
+
+> **Cloning this repo?** Use `--recurse-submodules` to get the companion MCP server too:
+> ```bash
+> git clone --recurse-submodules https://github.com/karkipsn/WireTap.git
+> ```
+> The `wiretap-mcp/` directory is a git submodule pointing to
+> [`karkipsn/wiretap-mcp`](https://github.com/karkipsn/wiretap-mcp). If you already
+> cloned without it, run `git submodule update --init` to fetch it.
 
 Add WireTap remotely from GitHub or as a local path dependency — see the recipes below.
 
@@ -165,11 +173,36 @@ final class AppContainer {
         #if DEBUG
         nfc.eventObserver = NfcWireTapObserver()
         #endif
+
+        // 4. (Optional) Live MCP bridge — lets wiretap-mcp query traffic as it happens
+        //    instead of requiring a file export first. Binds 127.0.0.1 only.
+        #if DEBUG
+        WireTap.startLocalBridge()   // default port 8787
+        #endif
     }
 }
 ```
 
 > In production builds, `eventObserver` is `nil` on every manager — every call site is a free no-op. No code is compiled in from WireTap.
+
+#### Connecting `wiretap-mcp` in live mode
+
+Once `startLocalBridge()` is running, start the MCP server with `--live`:
+
+```jsonc
+// .mcp.json / .cursor/mcp.json / claude_desktop_config.json
+{
+  "mcpServers": {
+    "wiretap": {
+      "command": "node",
+      "args": ["/path/to/WireTap/wiretap-mcp/dist/index.js", "--live"]
+      // default port 8787; pass "--live 9090" for a custom port
+    }
+  }
+}
+```
+
+The server fetches fresh data from the running app on every tool call. If the app isn't running, it reports the bridge as unreachable — no silent fallback to stale files.
 
 ---
 
