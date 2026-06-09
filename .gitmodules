@@ -1,0 +1,3 @@
+[submodule "wiretap-mcp"]
+	path = wiretap-mcp
+	url = https://github.com/karkipsn/wiretap-mcp.git
