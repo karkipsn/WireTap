@@ -1,5 +1,5 @@
 import XCTest
-@testable import WireTap
+@testable import WireTapCore
 
 /// TRACER-005 — Pluggable Protocol Decoders.
 /// Each test maps 1:1 to an acceptance criterion in `doc/specs/TRACER-005-decoders.md`.

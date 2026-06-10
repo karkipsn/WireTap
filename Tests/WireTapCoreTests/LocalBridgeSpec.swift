@@ -1,6 +1,6 @@
 #if DEBUG
 import XCTest
-@testable import WireTap
+@testable import WireTapCore
 
 /// TRACER-004 AC-7 + AC-8 — local bridge read-only & localhost-only.
 @MainActor

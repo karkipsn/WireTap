@@ -27,7 +27,16 @@ public struct AppInfo: Codable, Sendable {
     public let version: String
     public let build: String?
 
-    static func current() -> AppInfo {
+    public init(bundleId: String, name: String? = nil, version: String, build: String? = nil) {
+        self.bundleId = bundleId
+        self.name = name
+        self.version = version
+        self.build = build
+    }
+
+    /// App metadata read from the main bundle. Public so release consumers can
+    /// pass it to `WireTapReport` (TRACER-013).
+    public static func current() -> AppInfo {
         let info = Bundle.main.infoDictionary ?? [:]
         return AppInfo(
             bundleId: Bundle.main.bundleIdentifier ?? "unknown",
@@ -44,7 +53,16 @@ public struct EnvInfo: Codable, Sendable {
     public let device: String?
     public let locale: String?
 
-    static func current() -> EnvInfo {
+    public init(os: String, osVersion: String, device: String? = nil, locale: String? = nil) {
+        self.os = os
+        self.osVersion = osVersion
+        self.device = device
+        self.locale = locale
+    }
+
+    /// Environment metadata for the current process. Public so release consumers
+    /// can pass it to `WireTapReport` (TRACER-013).
+    public static func current() -> EnvInfo {
         #if os(iOS)
         let os = "iOS"
         #elseif os(macOS)

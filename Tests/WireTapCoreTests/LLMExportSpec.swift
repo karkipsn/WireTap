@@ -1,5 +1,5 @@
 import XCTest
-@testable import WireTap
+@testable import WireTapCore
 
 /// TRACER-003 — LLM-Optimized Export.
 ///

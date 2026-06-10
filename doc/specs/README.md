@@ -5,7 +5,7 @@
 > automated tests in `Tests/WireTapTests/`.
 >
 > **Maintained by**: Poshan Karki
-> **Last updated**: 2026-06-09
+> **Last updated**: 2026-06-10
 
 ---
 
@@ -43,7 +43,8 @@ TRACER-003  LLM-Optimized Export ─┘   (same serialization the MCP server reu
 TRACER-004  wiretap-mcp Server  ──────► the headline differentiator
 ```
 
-Then the niche-lock-in wave (TRACER-005…008) and DX wins (TRACER-009…012).
+Then the niche-lock-in wave (TRACER-005…008), DX wins (TRACER-009…012), and release-safe
+diagnostics (TRACER-013).
 
 ---
 
@@ -63,6 +64,7 @@ Then the niche-lock-in wave (TRACER-005…008) and DX wins (TRACER-009…012).
 | TRACER-010 | Configurable Redaction Rules | DX | P1 | Implemented | [spec](TRACER-010-redaction.md) |
 | TRACER-011 | os_log / SwiftLog Bridge | DX | P2 | Planned | _stub below_ |
 | TRACER-012 | In-App "Explain" (BYO key) | AI layer | P2 | Planned | _stub below_ |
+| TRACER-013 | Release-Safe Diagnostic Export (`WireTapCore`) | Foundation | P1 | Implemented | [spec](TRACER-013-release-diagnostic-export.md) |
 
 Tiers: **Foundation** (close the parity gap), **AI layer** (the differentiator),
 **Niche** (lock in the BLE/NFC hardware audience), **DX** (adoption & trust).

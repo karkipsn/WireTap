@@ -1,5 +1,5 @@
 import XCTest
-@testable import WireTap
+@testable import WireTapCore
 
 /// TRACER-007 — Cross-Radio Correlation.
 /// Each test maps 1:1 to an acceptance criterion in `doc/specs/TRACER-007-correlation.md`.

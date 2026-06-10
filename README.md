@@ -25,6 +25,7 @@ By default the inspector shows **Network only**; opt into `.ble` / `.nfc` per ap
 - [Capabilities & status](#capabilities--status)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Release diagnostics (`WireTapCore` + `WireTapReport`)](#release-diagnostics-wiretapcore--wiretapreport)
 - [Integration Tutorials](#integration-tutorials)
   - [Add the package — Swift Package Manager](#1-add-the-package--swift-package-manager)
   - [Add the package — XcodeGen](#2-add-the-package--xcodegen)
@@ -58,6 +59,30 @@ AppApiClient                    AppContainer ───────────�
 
 This matches OkHttp's `EventListener` pattern on Android and `URLProtocol` on iOS.
 
+### Package layout (two targets)
+
+```
+Sources/
+  WireTapCore/            release-safe: link this alone for production diagnostics
+    WireTap.swift           facade + stores (start here)
+    Redaction.swift         TRACER-010 — runs at capture, before any sink
+    Persistence.swift       JSONL disk writer (opt-in)
+    LocalBridge.swift       #if DEBUG localhost bridge for wiretap-mcp live mode
+    Models/                 BleEntry, NfcEntry, NetworkEntry
+    Export/                 SessionExport (.wiretapsession), LLMExport ("Copy for AI")
+    Analysis/               ConnectionLifecycle, Correlation, SessionDiff
+    Report/                 WireTapReport + privacy levels (TRACER-013, release path)
+  WireTapInspector/       builds the `WireTap` product: DEBUG inspector
+    WireTap+Umbrella.swift  @_exported import WireTapCore (so `import WireTap` is everything)
+    Interceptors/           WireTapURLProtocol (HTTP capture)
+    Overlay/                floating bubble
+    Views/                  SwiftUI inspector (Timeline / Network / BLE / NFC)
+```
+
+`WireTap` (the Inspector product) depends on and re-exports `WireTapCore`, so existing
+consumers just `import WireTap`. Release builds that only need diagnostic export link
+`WireTapCore` directly and get no capture or UI code.
+
 ---
 
 ## Requirements
@@ -90,6 +115,7 @@ Transparent view of what's here today, so you can plan around it.
 | **Configurable redaction** (headers + JSON body keys) | ✅ New | `WireTap.redaction` (TRACER-010); defaults cover auth/token/secret |
 | **Connection lifecycle** + **cross-radio correlation** | ✅ New | per-attempt BLE lifecycle view; NFC→BLE→network episode clustering (TRACER-006, TRACER-007) |
 | **Session diff** | ✅ New | compare a working vs failing capture to find what changed (TRACER-008) |
+| **Release-safe diagnostic export** (`WireTapCore` + `WireTapReport`) | ✅ New | production BLE+NFC field reports, format-compatible with the whole toolchain; anonymized by default, no capture, no network data (TRACER-013) |
 
 Redaction is a hard invariant: secrets are scrubbed before anything is persisted, exported,
 or handed to an agent — sensitive **headers and JSON body keys** (configurable via
@@ -113,6 +139,13 @@ See [`doc/specs/`](doc/specs/) for the roadmap and per-feature acceptance criter
 
 Add WireTap remotely from GitHub or as a local path dependency — see the recipes below.
 
+The package ships **two products**:
+
+| Product | What's in it | Link it in |
+|---------|--------------|-----------|
+| `WireTap` | Full DEBUG inspector: capture, views, overlay, `URLProtocol` (re-exports `WireTapCore`) | DEBUG builds |
+| `WireTapCore` | Models, serialization, redaction, decoders, `WireTapReport` — no capture, no UI | Release builds that need [diagnostic export](#release-diagnostics-wiretapcore--wiretapreport) |
+
 ### Package.swift
 
 ```swift
@@ -124,7 +157,8 @@ targets: [
         name: "MyApp",
         dependencies: [
             .product(name: "WireTap", package: "WireTap"),
-            // ...
+            // For production diagnostic reports (TRACER-013), add instead/also:
+            // .product(name: "WireTapCore", package: "WireTap"),
         ]
     )
 ]
@@ -183,7 +217,7 @@ final class AppContainer {
 }
 ```
 
-> In production builds, `eventObserver` is `nil` on every manager — every call site is a free no-op. No code is compiled in from WireTap.
+> In production builds, `eventObserver` is `nil` on every manager — every call site is a free no-op. No inspector code is compiled in. (If you opt into [release diagnostics](#release-diagnostics-wiretapcore--wiretapreport), production links the small `WireTapCore` serialization slice — still no capture, no UI.)
 
 #### Connecting `wiretap-mcp` in live mode
 
@@ -203,6 +237,53 @@ Once `startLocalBridge()` is running, start the MCP server with `--live`:
 ```
 
 The server fetches fresh data from the running app on every tool call. If the app isn't running, it reports the bridge as unreachable — no silent fallback to stale files.
+
+---
+
+## Release diagnostics (`WireTapCore` + `WireTapReport`)
+
+> TRACER-013 — let a **production** app emit a field diagnostic report (e.g. "device won't
+> pair on site") that the entire WireTap toolchain — `wiretap-mcp`, "Copy for AI", the
+> session viewer — reads exactly like a debug capture.
+
+`WireTapCore` is a release-safe slice: models, serialization, redaction, decoders, and the
+LLM renderer. **No capture engine, no `URLProtocol`, no UI** — it serializes only what your
+app explicitly hands it.
+
+```swift
+import WireTapCore   // safe in release — no inspector code
+
+let report = WireTapReport(
+    app: .current(),                  // or AppInfo(bundleId:name:version:build:)
+    privacy: .standard                // default: device names anonymized to ***XXXX
+)
+
+// Decoders use the same registerAll(on:) pattern as the DEBUG path
+MyDecoders.registerAll(on: report)    // report conforms to BleDecoderRegistry
+
+// Feed events from your app's own connection log — nothing is captured passively
+for event in connectionManager.bleHistory { report.add(ble: event.asWireTapEntry()) }
+for tap in nfcManager.tapHistory       { report.add(nfc: tap.asWireTapEntry()) }
+
+let json = try report.exportData()    // .wiretapsession — share sheet / support upload
+let text = report.exportForLLM()      // "Copy for AI" text
+```
+
+**Privacy & compliance by design** (see the [spec](doc/specs/TRACER-013-release-diagnostic-export.md)
+for the full App Store / GDPR analysis):
+
+- **BLE + NFC only.** There is no way to add network/HTTP data to a `WireTapReport` —
+  the emitted session always has `network: []`.
+- **Anonymized by default.** Device names truncate to their last 4 chars (`MS2-A1B2` → `***A1B2`).
+  Characteristic UUIDs stay full — they identify protocols, not people.
+- **Ephemeral & explicit.** In-memory only, no disk writes, no observers, no background
+  operation, no automatic transmission. The report leaves the device only when *your* app
+  shares it.
+- **No new permissions / privacy-manifest entries** beyond what your app already declares
+  for BLE/NFC.
+
+A cross-toolchain regression test ([`wiretap-mcp/test`](wiretap-mcp/test/)) locks the
+guarantee that every MCP tool parses a `WireTapReport`-produced session.
 
 ---
 

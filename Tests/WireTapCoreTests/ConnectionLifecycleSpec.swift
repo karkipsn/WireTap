@@ -1,5 +1,5 @@
 import XCTest
-@testable import WireTap
+@testable import WireTapCore
 
 /// TRACER-006 — Connection Lifecycle Timeline.
 /// Each test maps 1:1 to an acceptance criterion in `doc/specs/TRACER-006-lifecycle.md`.

@@ -1,5 +1,5 @@
 import XCTest
-@testable import WireTap
+@testable import WireTapCore
 
 /// TRACER-010 — Configurable Redaction Rules.
 /// Each test maps 1:1 to an acceptance criterion in `doc/specs/TRACER-010-redaction.md`.
